@@ -1,35 +1,43 @@
 import pandas as pd
+import os
 
 def read_excel_lines(filepath):
-    # Read the Excel file into a dataframe
     df = pd.read_excel(filepath, engine="openpyxl")
-    # Convert each row to a tuple (for easy comparison)
     return [tuple(row) for row in df.values]
 
-def compare_files(file1, file2):
-    # Read lines from both files
-    lines1 = read_excel_lines(file1)
-    lines2 = read_excel_lines(file2)
+def compare_multiple_files(filepaths):
+    all_lines = []
+    for filepath in filepaths:
+        lines = read_excel_lines(filepath)
+        all_lines.append(set(lines))
 
-    # Find lines that are the same
-    same = [line for line in lines1 if line in lines2]
-
-    # Find lines that are different (in either file, but not both)
-    different = list(set(lines1 + lines2) - set(same))
+    # Lines that are the same across all files
+    same = set.intersection(*all_lines)
+    # Lines that are different (appear in some, but not all)
+    different = set.union(*all_lines) - same
 
     return same, different
 
 if __name__ == "__main__":
-    # Example usage
-    file1 = input("Enter the path to the first Excel file: ")
-    file2 = input("Enter the path to the second Excel file: ")
+    # Ask user for the number of files and their paths
+    n = int(input("How many Excel files do you want to compare? "))
+    filepaths = []
+    for i in range(n):
+        path = input(f"Enter the path to Excel file #{i+1}: ")
+        filepaths.append(path)
 
-    same, different = compare_files(file1, file2)
+    same, different = compare_multiple_files(filepaths)
 
-    print("\n=== Same ===")
-    for line in same:
-        print(line)
+    # Write results to files
+    with open("same.txt", "w") as f:
+        f.write("Same rows across ALL files:\n")
+        for line in same:
+            f.write(str(line) + "\n")
 
-    print("\n=== Different ===")
-    for line in different:
-        print(line)
+    with open("different.txt", "w") as f:
+        f.write("Rows that are different (appear in some, but not all):\n")
+        for line in different:
+            f.write(str(line) + "\n")
+
+    print("\nComparison complete!")
+    print("Results saved to same.txt and different.txt.")
